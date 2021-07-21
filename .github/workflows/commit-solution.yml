@@ -1,0 +1,60 @@
+name: Commit Solution
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_message:
+        description: 'Message for the commit'
+        required: true
+
+jobs:
+  commit:
+    environment: development
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - uses: microsoft/powerplatform-actions/export-solution@v0
+        name: Export unmanaged
+        with:
+          environment-url: ${{ secrets.URL }}
+          app-id: ${{ secrets.APPLICATION_ID }}
+          client-secret: ${{ secrets.CLIENT_SECRET }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          solution-name: Portal1Day
+          solution-output-file: ${{ runner.temp }}/solution.zip
+          run-asynchronously: true
+      
+      - uses: microsoft/powerplatform-actions/export-solution@v0
+        name: Export managed
+        with:
+          environment-url: ${{ secrets.URL }}
+          app-id: ${{ secrets.APPLICATION_ID }}
+          client-secret: ${{ secrets.CLIENT_SECRET }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          solution-name: Portal1Day
+          solution-output-file: ${{ runner.temp }}/solution_managed.zip
+          run-asynchronously: true
+          managed: true
+
+      - name: Delete solution folder
+        run: Remove-Item solution -Recurse -Force -ErrorAction Ignore
+
+      - uses: microsoft/powerplatform-actions/unpack-solution@v0
+        with:
+          solution-file: ${{ runner.temp }}/solution.zip
+          solution-folder: solution
+          solution-type: Both
+      
+      - name: Configure git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Commit
+        run: |
+          git add .
+          git commit -m $env:COMMIT_MESSAGE --author "${{ github.actor }}"
+          git push
+        env:
+          COMMIT_MESSAGE: ${{ github.event.inputs.commit_message }}

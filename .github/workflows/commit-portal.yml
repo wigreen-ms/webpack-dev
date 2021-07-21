@@ -1,0 +1,64 @@
+name: Commit Portal
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_message:
+        description: "Message for the commit"
+        required: true
+
+jobs:
+  commit:
+    environment: development
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: get-pac.yml
+          workflow_conclusion: success
+          branch: main
+          name: pac
+          path: pac
+        name: Download PAC
+
+      - name: Authenticate to Dataverse
+        run: |
+          pac/pac auth create `
+            --url $env:URL `
+            --applicationId $env:APPLICATION_ID `
+            --clientSecret $env:CLIENT_SECRET `
+            --tenant $env:TENANT_ID `
+            --cloud Public
+        env:
+          URL: ${{ secrets.URL }}
+          APPLICATION_ID: ${{ secrets.APPLICATION_ID }}
+          CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+          TENANT_ID: ${{ secrets.TENANT_ID }}
+        shell: powershell
+
+      - name: Delete portal folder
+        run: rm portal -Recurse -Force -ErrorAction Ignore
+
+      - name: Export portal
+        run: |
+          pac/pac paportal download `
+            --path portal `
+            --websiteId $env:WEBSITE_ID
+        env:
+          WEBSITE_ID: f46b70cc-580b-4f1a-87c3-41deb48eb90d
+        shell: powershell
+
+      - name: Configure git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Commit
+        run: |
+          git add portal/*
+          git commit -m $env:COMMIT_MESSAGE --author "${{ github.actor }}"
+          git push
+        env:
+          COMMIT_MESSAGE: ${{ github.event.inputs.commit_message }}
