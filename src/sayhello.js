@@ -1,3 +1,3 @@
 export default function sayhello() {
-  alert("Sup, SPARK");
+  alert("Sup, Sparten");
 }

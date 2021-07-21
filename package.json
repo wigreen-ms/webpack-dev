@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "webpack serve --content-base ./dist"
+    "dev": "webpack serve --content-base ./dist",
+    "dataverse": "dataverse serve"
   },
   "repository": {
     "type": "git",
@@ -21,6 +22,8 @@
   "devDependencies": {
     "html-webpack-plugin": "^5.3.2",
     "webpack": "^5.45.1",
+    "webpack-dataverse": "^1.0.10",
     "webpack-dev-server": "^3.11.2"
-  }
+  },
+  "dependencies": {}
 }
